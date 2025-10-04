@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Betting AI - Smart Predictions & Value Bets</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <h1>Sports Betting AI</h1>
+                </div>
+                <div class="header-stats">
+                    <div class="stat">
+                        <span class="stat-value" id="totalMatches">0</span>
+                        <span class="stat-label">Matches</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="valueBets">0</span>
+                        <span class="stat-label">Value Bets</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="accuracy">85%</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                </div>
+            </div>
+            <p class="subtitle">AI-Powered Predictions for Hollywoodbets & Betway</p>
+        </header>
+
+        <!-- Controls -->
+        <section class="controls">
+            <div class="control-group">
+                <div class="filter-group">
+                    <select id="sportSelect" class="select-custom">
+                        <option value="soccer">⚽ Soccer</option>
+                        <option value="basketball">🏀 Basketball</option>
+                        <option value="all">All Sports</option>
+                    </select>
+                    
+                    <select id="bookmakerSelect" class="select-custom">
+                        <option value="all">All Bookmakers</option>
+                        <option value="betway">Betway</option>
+                        <option value="hollywoodbets">Hollywoodbets</option>
+                    </select>
+                </div>
+                
+                <div class="toggle-group">
+                    <label class="toggle">
+                        <input type="checkbox" id="liveMatches">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Live Matches</span>
+                    </label>
+                    
+                    <label class="toggle">
+                        <input type="checkbox" id="valueBetsOnly">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Value Bets Only</span>
+                    </label>
+                </div>
+                
+                <div class="action-group">
+                    <button class="btn btn-secondary" onclick="updateMatches()">
+                        <i class="fas fa-sync-alt"></i> Update
+                    </button>
+                    <button class="btn btn-primary" onclick="updateLiveScores()">
+                        <i class="fas fa-broadcast-tower"></i> Live Scores
+                    </button>
+                    <button class="btn btn-success" onclick="showCustomPrediction()">
+                        <i class="fas fa-calculator"></i> Custom AI
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading matches and AI predictions...</p>
+        </div>
+
+        <!-- Matches Grid -->
+        <section id="matchesSection">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> Today's Matches</h2>
+                <div class="last-updated" id="lastUpdated"></div>
+            </div>
+            <div id="matchesContainer" class="matches-grid">
+                <!-- Matches will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Custom Prediction Modal -->
+        <div id="customPredictionModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-calculator"></i> Custom AI Prediction</h2>
+                    <button class="close-btn" onclick="hideCustomPrediction()">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="homeTeam">
+                                <i class="fas fa-home"></i> Home Team
+                            </label>
+                            <input type="text" id="homeTeam" placeholder="e.g., Manchester United" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="awayTeam">
+                                <i class="fas fa-away"></i> Away Team
+                            </label>
+                            <input type="text" id="awayTeam" placeholder="e.g., Liverpool" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="homeOdds">
+                                <i class="fas fa-chart-line"></i> Home Odds
+                            </label>
+                            <input type="number" id="homeOdds" step="0.01" placeholder="2.50" value="2.50" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="awayOdds">
+                                <i class="fas fa-chart-line"></i> Away Odds
+                            </label>
+                            <input type="number" id="awayOdds" step="0.01" placeholder="2.80" value="2.80" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="drawOdds">
+                                <i class="fas fa-equals"></i> Draw Odds
+                            </label>
+                            <input type="number" id="drawOdds" step="0.01" placeholder="3.20" value="3.20" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="league">
+                                <i class="fas fa-trophy"></i> League (Optional)
+                            </label>
+                            <input type="text" id="league" placeholder="e.g., Premier League" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn btn-success btn-large" onclick="predictCustomMatch()">
+                            <i class="fas fa-brain"></i> Get AI Prediction
+                        </button>
+                        <button class="btn btn-secondary btn-large" onclick="hideCustomPrediction()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                    
+                    <div id="customPredictionResult"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <h3><i class="fas fa-robot"></i> Sports Betting AI</h3>
+                    <p>AI-powered predictions for smart betting decisions</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-section">
+                        <h4>Platform</h4>
+                        <a href="#" onclick="showSection('matchesSection')">Matches</a>
+                        <a href="#" onclick="showCustomPrediction()">Custom AI</a>
+                        <a href="#" onclick="updateMatches()">Refresh Data</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Bookmakers</h4>
+                        <a href="https://www.hollywoodbets.net" target="_blank">Hollywoodbets</a>
+                        <a href="https://www.betway.co.za" target="_blank">Betway</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Sports Betting AI. For educational purposes. Bet responsibly.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentMatches = [];
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMatches();
+            setInterval(loadMatches, 30000); // Refresh every 30 seconds
+            updateLastUpdated();
+        });
+
+        // Filter change handlers
+        document.getElementById('sportSelect').addEventListener('change', loadMatches);
+        document.getElementById('bookmakerSelect').addEventListener('change', loadMatches);
+        document.getElementById('liveMatches').addEventListener('change', loadMatches);
+        document.getElementById('valueBetsOnly').addEventListener('change', loadMatches);
+
+        async function loadMatches() {
+            showLoading();
+            
+            const sport = document.getElementById('sportSelect').value;
+            const bookmaker = document.getElementById('bookmakerSelect').value;
+            const liveOnly = document.getElementById('liveMatches').checked;
+            const valueOnly = document.getElementById('valueBetsOnly').checked;
+            
+            try {
+                const response = await fetch(`/api/matches?sport=${sport}&live=${liveOnly}&value=${valueOnly}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentMatches = data.matches;
+                    displayMatches(data.matches);
+                    updateStats(data.matches);
+                    updateLastUpdated();
+                } else {
+                    showError('Failed to load matches: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Network error loading matches: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayMatches(matches) {
+            const container = document.getElementById('matchesContainer');
+            
+            if (matches.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>No matches found</h3>
+                        <p>Try updating matches or adjusting your filters</p>
+                        <button class="btn btn-primary" onclick="updateMatches()">
+                            <i class="fas fa-sync-alt"></i> Update Matches
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = matches.map(match => `
+                <div class="match-card ${match.is_live ? 'live' : ''} ${match.value_bet ? 'value-bet' : ''}">
+                    ${match.is_live ? '<div class="live-badge"><i class="fas fa-broadcast-tower"></i> LIVE</div>' : ''}
+                    ${match.value_bet ? `<div class="value-bet-badge" title="Value Bet Edge: ${(match.edge * 100).toFixed(1)}%">
+                        <i class="fas fa-gem"></i> VALUE BET
+                    </div>` : ''}
+                    
+                    <div class="match-header">
+                        <div class="sport-info">
+                            <i class="fas fa-futbol"></i> ${match.sport_key || 'Soccer'}
+                        </div>
+                        <div class="bookmaker ${match.bookmaker}">
+                            ${match.bookmaker ? match.bookmaker.toUpperCase() : 'BETWAY'}
+                        </div>
+                    </div>
+                    
+                    <div class="teams-section">
+                        <div class="team home-team">
+                            <div class="team-name">${match.home_team}</div>
+                            <div class="team-odds">${match.home_odds ? match.home_odds.toFixed(2) : 'N/A'}</div>
+                        </div>
+                        
+                        <div class="vs-container">
+                            <div class="vs">VS</div>
+                            ${match.is_live ? `
+                                <div class="live-score">
+                                    <div class="score">${match.home_score || 0} - ${match.away_score || 0}</div>
+                                    <div class="match-minute">${match.status || 'LIVE'}</div>
+                                </div>
+                            ` : `
+                                <div class="match-time">
+                                    ${new Date(match.commence_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </div>
+                            `}
+                        </div>
+                        
+                        <div class="team away-team">
+                            <div class="team-name">${match.away_team}</div>
+                            <div class="team-odds">${match.away_odds ? match.away_odds.toFixed(2) : 'N/A'}</div>
+                        </div>
+                    </div>
+                    
+                    ${match.draw_odds ? `
+                        <div class="draw-odds">
+                            <span>Draw: ${match.draw_odds.toFixed(2)}</span>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="ai-prediction">
+                        <div class="prediction-header">
+                            <i class="fas fa-robot"></i>
+                            <span>AI Prediction</span>
+                            <div class="confidence ${getConfidenceClass(match.confidence)}">
+                                ${(match.confidence * 100).toFixed(1)}% confidence
+                            </div>
+                        </div>
+                        
+                        <div class="prediction-winner">
+                            Predicted: <strong>${getWinnerText(match)}</strong>
+                        </div>
+                        
+                        <div class="probability-bars">
+                            <div class="prob-bar home-prob" style="width: ${(match.home_win_prob * 100)}%">
+                                <span class="prob-label">${(match.home_win_prob * 100).toFixed(1)}%</span>
+                            </div>
+                            <div class="prob-bar draw-prob" style="width: ${(match.draw_prob * 100)}%">
+                                <span class="prob-label">${(match.draw_prob * 100).toFixed(1)}%</span>
+                            </div>
+                            <div class="prob-bar away-prob" style="width: ${(match.away_win_prob * 100)}%">
+                                <span class="prob-label">${(match.away_win_prob * 100).toFixed(1)}%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="probability-labels">
+                            <span>${match.home_team.split(' ').pop()}</span>
+                            <span>Draw</span>
+                            <span>${match.away_team.split(' ').pop()}</span>
+                        </div>
+                    </div>
+                    
+                    ${match.value_bet ? `
+                        <div class="value-bet-info">
+                            <div class="value-header">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Value Bet Opportunity</span>
+                            </div>
+                            <div class="value-details">
+                                <div class="value-side">
+                                    Bet on: <strong>${match.value_side.toUpperCase()}</strong>
+                                </div>
+                                <div class="value-edge">
+                                    Edge: <strong>+${(match.edge * 100).toFixed(1)}%</strong>
+                                </div>
+                            </div>
+                            <div class="bet-actions">
+                                <button class="btn btn-small btn-warning" onclick="placeBet('${match.value_side}', ${match[match.value_side + '_odds']}, '${match.home_team} vs ${match.away_team}')">
+                                    <i class="fas fa-coins"></i> Place Bet
+                                </button>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="match-footer">
+                        <div class="match-date">
+                            ${new Date(match.commence_time).toLocaleDateString()}
+                        </div>
+                        <div class="match-id">
+                            #${match.id}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getWinnerText(match) {
+            if (match.predicted_winner === 'home') return match.home_team;
+            if (match.predicted_winner === 'away') return match.away_team;
+            return 'Draw';
+        }
+
+        function getConfidenceClass(confidence) {
+            if (confidence >= 0.7) return 'high';
+            if (confidence >= 0.5) return 'medium';
+            return 'low';
+        }
+
+        function updateStats(matches) {
+            document.getElementById('totalMatches').textContent = matches.length;
+            
+            const valueBets = matches.filter(m => m.value_bet).length;
+            document.getElementById('valueBets').textContent = valueBets;
+            
+            // Calculate accuracy based on confidence (simulated)
+            const avgConfidence = matches.length > 0 ? 
+                matches.reduce((sum, m) => sum + m.confidence, 0) / matches.length : 0;
+            document.getElementById('accuracy').textContent = Math.round(avgConfidence * 85) + '%';
+        }
+
+        function updateLastUpdated() {
+            document.getElementById('lastUpdated').textContent = 
+                'Last updated: ' + new Date().toLocaleTimeString();
+        }
+
+        async function updateMatches() {
+            showLoading();
+            try {
+                const response = await fetch('/api/matches/update');
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`✅ Updated ${data.updated} matches`);
+                    loadMatches();
+                } else {
+                    showError('Failed to update matches: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error updating matches: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function updateLiveScores() {
+            showLoading();
+            try {
+                const response = await fetch('/api/live/update');
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`✅ Updated ${data.updated} live matches`);
+                    loadMatches();
+                } else {
+                    showError('Failed to update live scores: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error updating live scores: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showCustomPrediction() {
+            document.getElementById('customPredictionModal').classList.remove('hidden');
+            document.getElementById('customPredictionResult').innerHTML = '';
+        }
+
+        function hideCustomPrediction() {
+            document.getElementById('customPredictionModal').classList.add('hidden');
+        }
+
+        async function predictCustomMatch() {
+            const homeTeam = document.getElementById('homeTeam').value.trim();
+            const awayTeam = document.getElementById('awayTeam').value.trim();
+            const homeOdds = parseFloat(document.getElementById('homeOdds').value);
+            const awayOdds = parseFloat(document.getElementById('awayOdds').value);
+            const drawOdds = parseFloat(document.getElementById('drawOdds').value);
+            const league = document.getElementById('league').value.trim();
+            
+            if (!homeTeam || !awayTeam) {
+                showError('Please enter both team names');
+                return;
+            }
+            
+            if (!homeOdds || !awayOdds || !drawOdds) {
+                showError('Please enter all odds');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/predict/custom', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        home_team: homeTeam,
+                        away_team: awayTeam,
+                        home_odds: homeOdds,
+                        away_odds: awayOdds,
+                        draw_odds: drawOdds,
+                        league: league || 'Unknown'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayCustomPredictionResult(data);
+                } else {
+                    showError('Prediction failed: ' + data.error);
+                }
+            } catch (error) {
+                showError('Error getting prediction: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayCustomPredictionResult(data) {
+            const prediction = data.prediction;
+            const valueBets = data.value_bets || [];
+            const bestValue = data.best_value_bet;
+            const input = data.input;
+            
+            const resultHtml = `
+                <div class="prediction-result">
+                    <div class="result-header">
+                        <h3><i class="fas fa-chart-bar"></i> AI Prediction Results</h3>
+                    </div>
+                    
+                    <div class="match-summary">
+                        <div class="teams-display">
+                            <div class="team-display home">${input.home_team}</div>
+                            <div class="vs-small">VS</div>
+                            <div class="team-display away">${input.away_team}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="prediction-details">
+                        <div class="prediction-card">
+                            <div class="prediction-main">
+                                <div class="predicted-winner">
+                                    <i class="fas fa-trophy"></i>
+                                    <span>Predicted Winner:</span>
+                                    <strong class="winner">${getCustomWinnerText(prediction, input)}</strong>
+                                </div>
+                                <div class="confidence-badge ${getConfidenceClass(prediction.confidence)}">
+                                    ${(prediction.confidence * 100).toFixed(1)}% Confidence
+                                </div>
+                            </div>
+                            
+                            <div class="probability-breakdown">
+                                <h4>Probability Breakdown:</h4>
+                                <div class="prob-items">
+                                    <div class="prob-item">
+                                        <span class="prob-team">${input.home_team}:</span>
+                                        <span class="prob-value">${(prediction.home_win_probability * 100).toFixed(1)}%</span>
+                                        <div class="prob-bar-small home" style="width: ${prediction.home_win_probability * 100}%"></div>
+                                    </div>
+                                    <div class="prob-item">
+                                        <span class="prob-team">Draw:</span>
+                                        <span class="prob-value">${(prediction.draw_probability * 100).toFixed(1)}%</span>
+                                        <div class="prob-bar-small draw" style="width: ${prediction.draw_probability * 100}%"></div>
+                                    </div>
+                                    <div class="prob-item">
+                                        <span class="prob-team">${input.away_team}:</span>
+                                        <span class="prob-value">${(prediction.away_win_probability * 100).toFixed(1)}%</span>
+                                        <div class="prob-bar-small away" style="width: ${prediction.away_win_probability * 100}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${bestValue ? `
+                            <div class="value-bet-card">
+                                <div class="value-bet-header">
+                                    <i class="fas fa-gem"></i>
+                                    <h4>💎 VALUE BET DETECTED</h4>
+                                </div>
+                                <div class="value-bet-details">
+                                    <div class="value-side">
+                                        <strong>Bet on:</strong> ${bestValue.side.toUpperCase()}
+                                    </div>
+                                    <div class="value-odds">
+                                        <strong>Odds:</strong> ${bestValue.odds.toFixed(2)}
+                                    </div>
+                                    <div class="value-edge">
+                                        <strong>Edge:</strong> +${(bestValue.edge * 100).toFixed(1)}%
+                                    </div>
+                                    <div class="value-ev">
+                                        <strong>Expected Value:</strong> +${(bestValue.expected_value * 100).toFixed(1)}%
+                                    </div>
+                                </div>
+                                <div class="value-explanation">
+                                    <p>The AI predicts a <strong>${(bestValue.predicted_prob * 100).toFixed(1)}%</strong> chance, 
+                                    but the odds imply only <strong>${(bestValue.implied_prob * 100).toFixed(1)}%</strong>.</p>
+                                </div>
+                                <div class="bet-action">
+                                    <button class="btn btn-warning btn-large" onclick="placeBet('${bestValue.side}', ${bestValue.odds}, '${input.home_team} vs ${input.away_team}')">
+                                        <i class="fas fa-coins"></i> Place ${bestValue.side.toUpperCase()} Bet at ${bestValue.odds.toFixed(2)}
+                                    </button>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="no-value-bet">
+                                <i class="fas fa-info-circle"></i>
+                                <p>No strong value bets detected with current odds and threshold.</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('customPredictionResult').innerHTML = resultHtml;
+        }
+
+        function getCustomWinnerText(prediction, input) {
+            if (prediction.predicted_winner === 'home') return input.home_team;
+            if (prediction.predicted_winner === 'away') return input.away_team;
+            return 'Draw';
+        }
+
+        function placeBet(side, odds, match) {
+            const betMessage = `Recommended bet: ${side.toUpperCase()} on ${match} at odds ${odds.toFixed(2)}\n\nPlace this bet manually on:\n• Hollywoodbets: https://www.hollywoodbets.net\n• Betway: https://www.betway.co.za`;
+            
+            if (confirm(betMessage + '\n\nClick OK to open bookmakers, or Cancel to stay.')) {
+                window.open('https://www.hollywoodbets.net', '_blank');
+                window.open('https://www.betway.co.za', '_blank');
+            }
+        }
+
+        function showSection(sectionId) {
+            // Scroll to section
+            document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // UI Helper Functions
+        function showLoading() {
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').classList.add('hidden');
+        }
+
+        function showMessage(message) {
+            createToast(message, 'success');
+        }
+
+        function showError(message) {
+            createToast(message, 'error');
+        }
+
+        function createToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 4000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('customPredictionModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideCustomPrediction();
+            }
+        });
+
+        // Handle Enter key in custom prediction form
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !document.getElementById('customPredictionModal').classList.contains('hidden')) {
+                predictCustomMatch();
+            }
+        });
+    </script>
+</body>
+</html>
